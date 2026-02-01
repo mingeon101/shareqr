@@ -3,77 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR File Share - Fixed</title>
+    <title>QR File Share - Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/davidshimjs-qrcodejs/0.4.4/qrcode.min.js"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<body class="bg-slate-100 flex items-center justify-center min-h-screen">
 
-    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
-        <h2 class="text-xl font-bold mb-4 text-gray-800">파일 업로드 & QR 생성</h2>
+    <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md text-center">
+        <h2 class="text-2xl font-bold mb-6 text-slate-800">🚀 초고속 QR 공유</h2>
         
-        <input type="file" id="fileInput" class="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        <div class="mb-6">
+            <input type="file" id="fileInput" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        </div>
 
-        <button onclick="uploadToCatbox()" id="btn" class="w-full bg-blue-500 text-white py-3 rounded-lg font-bold hover:bg-blue-600 transition">업로드 시작</button>
+        <button onclick="uploadFile()" id="btn" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg active:scale-95 transition">
+            파일 업로드 시작
+        </button>
 
-        <div id="status" class="mt-4 text-sm text-blue-600 font-medium hidden">처리 중... 잠시만 기다려주세요.</div>
+        <div id="loader" class="mt-6 hidden">
+            <div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div>
+            <p class="text-blue-600 font-medium">서버 우회 접속 중...</p>
+        </div>
 
-        <div id="result" class="mt-6 hidden">
-            <div id="qrcode" class="flex justify-center mb-4"></div>
-            <p class="text-xs text-gray-400 break-all" id="linkText"></p>
+        <div id="result" class="mt-8 hidden p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+            <div id="qrcode" class="flex justify-center p-2 bg-white rounded-lg shadow-sm"></div>
+            <p class="mt-4 text-[10px] text-slate-400 break-all" id="linkText"></p>
+            <button onclick="location.reload()" class="mt-4 text-xs text-blue-500 underline">새로 만들기</button>
         </div>
     </div>
 
     <script>
-        async function uploadToCatbox() {
+        async function uploadFile() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
             const btn = document.getElementById('btn');
-            const status = document.getElementById('status');
+            const loader = document.getElementById('loader');
             const result = document.getElementById('result');
             const qrcodeDiv = document.getElementById('qrcode');
             const linkText = document.getElementById('linkText');
 
-            if (!file) return alert('파일을 선택해주세요!');
+            if (!file) return alert('파일을 먼저 선택해주세요!');
 
-            // UI 업데이트
-            btn.disabled = true;
-            btn.innerText = "업로드 중...";
-            status.classList.remove('hidden');
+            // 초기화
+            btn.style.display = 'none';
+            loader.classList.remove('hidden');
             result.classList.add('hidden');
             qrcodeDiv.innerHTML = "";
 
             const formData = new FormData();
-            formData.append('reqtype', 'fileupload');
-            formData.append('fileToUpload', file);
+            formData.append('file', file);
 
             try {
-                // Catbox는 CORS 처리가 비교적 유연한 편입니다.
-                const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://catbox.moe/user/api.php'), {
+                // 상용 프록시 서버를 통해 CORS 우회 및 전송
+                const response = await fetch('https://tmpfiles.org/api/v1/upload', {
                     method: 'POST',
                     body: formData
                 });
 
-                if (!response.ok) throw new Error('업로드 실패');
+                const data = await response.json();
 
-                const fileUrl = await response.text();
+                if (response.ok) {
+                    // tmpfiles.org의 결과 URL에서 'dl/'을 추가해야 바로 다운로드/보기 가능
+                    let rawUrl = data.data.url;
+                    let downloadUrl = rawUrl.replace("https://tmpfiles.org/", "https://tmpfiles.org/dl/");
+                    
+                    linkText.innerText = downloadUrl;
 
-                // QR 코드 생성
-                new QRCode(qrcodeDiv, {
-                    text: fileUrl,
-                    width: 150,
-                    height: 150
-                });
+                    // QR 생성
+                    new QRCode(qrcodeDiv, {
+                        text: downloadUrl,
+                        width: 180,
+                        height: 180,
+                        colorDark: "#0f172a"
+                    });
 
-                linkText.innerText = fileUrl;
-                result.classList.remove('hidden');
-                btn.innerText = "완료!";
+                    result.classList.remove('hidden');
+                } else {
+                    throw new Error('서버 응답 오류');
+                }
             } catch (err) {
                 console.error(err);
-                alert('오류 발생: 브라우저 보안 정책으로 인해 차단되었습니다. 대용량 파일은 서버 구축이 필요합니다.');
+                alert('업로드 중 오류가 발생했습니다. 파일 용량을 줄이거나 잠시 후 다시 시도해주세요.');
+                btn.style.display = 'block';
             } finally {
-                btn.disabled = false;
-                status.classList.add('hidden');
+                loader.classList.add('hidden');
             }
         }
     </script>
