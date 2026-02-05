@@ -67,7 +67,7 @@
                     const fileId = data.id;
                     const directDownloadUrl = `https://pixeldrain.com/api/file/${fileId}`;
                     
-                    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(directDownloadUrl)}`;
+                    const qrApiUrl = `http://api.qrserver.com/v1/create-qr-code/?data=${directDownloadUrl}&size=100x100`;
                     
                     qrImage.src = qrApiUrl;
                     linkText.innerText = directDownloadUrl;
