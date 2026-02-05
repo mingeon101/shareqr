@@ -1,1 +1,1 @@
-# shareqr
+# Share QR
