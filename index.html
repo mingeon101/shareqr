@@ -9,7 +9,7 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
     <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center">
-        <h2 class="text-xl font-bold mb-6 text-gray-800">광고 제로 파일 공유</h2>
+        <h2 class="text-xl font-bold mb-6 text-gray-800"></h2>
         
         <div class="mb-6">
             <input type="file" id="fileInput" class="hidden" onchange="document.getElementById('fileLabel').innerText = this.files[0].name">
@@ -55,7 +55,6 @@
             formData.append('file', file);
 
             try {
-                // Pixeldrain API 사용 (광고가 적고 직링크 지원)
                 const response = await fetch('https://pixeldrain.com/api/file', {
                     method: 'POST',
                     body: formData
@@ -64,11 +63,9 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // 핵심: 파일 ID를 추출하여 '직접 다운로드 주소(/api/file/ID)'로 QR 생성
                     const fileId = data.id;
                     const directDownloadUrl = `https://pixeldrain.com/api/file/${fileId}`;
                     
-                    // QR 생성 (중간 페이지 거치지 않음)
                     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(directDownloadUrl)}`;
                     
                     qrImage.src = qrApiUrl;
